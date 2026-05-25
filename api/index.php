@@ -46,6 +46,7 @@ if ($base !== '' && str_starts_with($uri, $base)) {
 }
 $uri = preg_replace('#^/index\.php#', '', $uri);
 $uri = rtrim($uri, '/');
+$uri = normalizeApiRoute($uri ?: '/');
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Obtener token de cabecera
@@ -115,6 +116,20 @@ function getJsonBody(): array
 {
     $raw = file_get_contents('php://input');
     return json_decode($raw, true) ?? [];
+}
+
+function normalizeApiRoute(string $uri): string
+{
+    $uri = '/' . trim($uri, '/');
+    if ($uri === '/admin') {
+        return $uri;
+    }
+    foreach (['auth', 'time', 'admin'] as $prefix) {
+        if ($uri === '/' . $prefix || str_starts_with($uri, '/' . $prefix . '/')) {
+            return '/api' . $uri;
+        }
+    }
+    return $uri;
 }
 
 // ── RUTAS ─────────────────────────────────────────────────────
