@@ -1147,6 +1147,8 @@
     z-index: 250;
     padding: 24px 18px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
   .employee-drawer.open { transform: translateX(0); }
   .drawer-header {
@@ -1163,7 +1165,7 @@
     font-size: 20px;
     cursor: pointer;
   }
-  .drawer-nav { display: flex; flex-direction: column; gap: 12px; }
+  .drawer-nav { display: flex; flex-direction: column; gap: 12px; flex: 1; }
   .drawer-link {
     background: rgba(255,255,255,.03);
     border: 1px solid var(--border);
@@ -1171,6 +1173,22 @@
     color: var(--text);
     text-align: left;
     padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .drawer-footer {
+    margin-top: auto;
+    padding-top: 16px;
+  }
+  .drawer-logout {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 2px;
     font-family: 'DM Mono', monospace;
     font-size: 12px;
     cursor: pointer;
