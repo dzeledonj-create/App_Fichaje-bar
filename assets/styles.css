@@ -2324,6 +2324,16 @@ body.employee-page .employee-drawer { left: 0; }
 .admin-page .topbar-toggle { display: none; }
 .admin-page .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; }
 
+.admin-page #page-dashboard .section-card {
+  display: flex;
+  flex-direction: column;
+}
+.admin-page #page-dashboard .section-card .section-body {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
   @media (max-width: 1024px) {
     .admin-page .topbar-toggle { display: inline-flex; }
     .admin-page .sidebar {
