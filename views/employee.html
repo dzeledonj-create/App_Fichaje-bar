@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BURUKUCA CAFÉ - EMPLEADOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="employee-page">
+
+<section class="employee-drawer" id="employeeDrawer">
+  <section class="drawer-header">
+    <strong>Menú</strong>
+    <button class="drawer-close" onclick="toggleEmployeeDrawer()" aria-label="Cerrar menú">✕</button>
+  </section>
+  <nav class="drawer-nav">
+    <button class="drawer-link" type="button" onclick="scrollToSection('#clockSection'); toggleEmployeeDrawer()">Reloj</button>
+    <button class="drawer-link" type="button" onclick="scrollToSection('#fichajeSection'); toggleEmployeeDrawer()">Fichaje</button>
+    <button class="drawer-link" type="button" onclick="scrollToSection('#historySection'); toggleEmployeeDrawer()">Historial</button>
+    <button class="drawer-link" type="button" onclick="scrollToSection('#historySection'); toggleEmployeeDrawer()">Exportar</button>
+  </nav>
+</section>
+<section class="drawer-overlay" id="drawerOverlay" onclick="toggleEmployeeDrawer()"></section>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <section class="topbar-brand">BURUKUCA CAFÉ <span>/ Empleado</span></section>
+  <section class="topbar-user">Bienvenido, <strong id="userName">—</strong></section>
+  <button class="topbar-toggle" onclick="toggleEmployeeDrawer()" aria-label="Abrir menú">☰</button>
+  <button class="btn-logout" onclick="logout()">Salir</button>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Reloj + Estado -->
+  <section class="clock-section" id="clockSection">
+    <section class="clock-content">
+      <div class="clock-display"><span id="clockH">00</span><span class="gold">:</span><span id="clockM">00</span><span class="gold">:</span><span id="clockS">00</span></div>
+      <div class="clock-date" id="clockDate">—</div>
+    </section>
+    <section id="statusBadge" class="status-badge fuera">
+      <span class="dot"></span>
+      <span id="statusText">Fuera del turno</span>
+    </section>
+  </section>
+
+  <!-- FICHAJE -->
+  <section class="fichar-section" id="fichajeSection">
+    <h2 class="section-title">Control de Asistencia</h2>
+    <p class="section-sub">Registra tu entrada y salida del turno</p>
+
+    <section class="fichar-btns">
+      <button class="btn-fichar btn-entrada" id="btnEntrada" onclick="openModal('entrada')">
+        <span class="btn-icon">→</span>
+        <span>Registrar Entrada</span>
+      </button>
+      <button class="btn-fichar btn-salida" id="btnSalida" onclick="openModal('salida')">
+        <span class="btn-icon">←</span>
+        <span>Registrar Salida</span>
+      </button>
+    </section>
+
+    <section class="timer-box" id="timerBox">
+      <span class="label">Tiempo en turno</span>
+      <span class="time" id="timerVal">00:00:00</span>
+    </section>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section class="history-section" id="historySection">
+    <section class="history-header">
+      <section>
+        <h2 class="section-title">Mi historial</h2>
+        <p class="section-sub">Registro de turnos trabajados</p>
+      </section>
+      <section class="history-actions">
+        <section class="filter-group">
+          <label for="exportYear">Año</label>
+          <select id="exportYear"></select>
+        </section>
+        <section class="filter-group">
+          <label for="exportMonth">Mes</label>
+          <select id="exportMonth"></select>
+        </section>
+        <button class="btn btn-gold" onclick="exportMyHours()">Exportar PDF</button>
+      </section>
+    </section>
+    <section class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Duración</th>
+            <th>Estado</th>
+            <th>Firma entrada</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr class="loading-row">
+            <td colspan="6"><span class="spinner-inline"></span>Cargando historial…</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="history-summary">
+      <section>
+        <strong>Total horas mes actual</strong>
+        <p id="currentMonthTotalLabel">Cargando total de horas…</p>
+      </section>
+    </section>
+    <section class="pagination" id="pagination"></section>
+  </section>
+
+</main>
+
+<!-- MODAL DE FIRMA -->
+<section class="overlay" id="firmaOverlay">
+  <section class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <section class="modal-header">
+      <span class="modal-tipo" id="modalTipo">Entrada</span>
+      <h3 id="modalTitle">Confirmar Entrada</h3>
+      <p>Por favor, introduce tus datos para validar el fichaje. Actúa como firma digital.</p>
+    </section>
+
+    <section id="modalMsg" class="modal-msg"></section>
+
+    <section class="field">
+      <label for="fNombre">Nombre</label>
+      <input type="text" id="fNombre" placeholder="Tu nombre" autocomplete="given-name">
+    </section>
+    <section class="field">
+      <label for="fApellidos">Apellidos</label>
+      <input type="text" id="fApellidos" placeholder="Tus apellidos" autocomplete="family-name">
+    </section>
+    <section class="field">
+      <label for="fDni">DNI / NIE</label>
+      <input type="text" id="fDni" placeholder="12345678A" autocomplete="off" maxlength="9">
+    </section>
+
+    <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarFichaje()">Confirmar</button>
+  </section>
+</section>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── APP ROOT / AUTH ───────────────────────────────────────
+  const APP_ROOT = window.location.pathname.split('/').slice(0,2).join('/') || '/';
+  const token = localStorage.getItem('bf_token');
+  if (!token) location.href = buildUrl('/');
+  const user = JSON.parse(localStorage.getItem('bf_user') || '{}');
+  if (user.rol === 'admin') location.href = buildUrl('/admin');
+
+  document.getElementById('userName').textContent =
+    (user.nombre || '') + ' ' + (user.apellidos || '');
+
+  // ── RELOJ ─────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clockH').textContent = String(now.getHours()).padStart(2,'0');
+    document.getElementById('clockM').textContent = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clockS').textContent = String(now.getSeconds()).padStart(2,'0');
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    document.getElementById('clockDate').textContent =
+      `${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── ESTADO TURNO ──────────────────────────────────────────
+  let currentStatus = null;
+  let timerInterval = null;
+  let shiftStart    = null;
+
+  async function loadStatus() {
+    try {
+      const res  = await apiFetch('/api/time/status');
+      const data = await res.json();
+      if (data.success) updateStatus(data.data);
+    } catch(e) {}
+  }
+
+  function updateStatus(data) {
+    currentStatus = data;
+    const badge  = document.getElementById('statusBadge');
+    const text   = document.getElementById('statusText');
+    const bE     = document.getElementById('btnEntrada');
+    const bS     = document.getElementById('btnSalida');
+    const timer  = document.getElementById('timerBox');
+
+    if (data.has_open_shift) {
+      badge.className = 'status-badge dentro';
+      text.textContent = 'En turno';
+      bE.disabled = true;
+      bS.disabled = false;
+      timer.classList.add('show');
+      shiftStart = new Date(data.open_shift.hora_entrada);
+      if (!timerInterval) startTimer();
+    } else {
+      badge.className = 'status-badge fuera';
+      text.textContent = 'Fuera del turno';
+      bE.disabled = false;
+      bS.disabled = true;
+      timer.classList.remove('show');
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+  }
+
+  function startTimer() {
+    timerInterval = setInterval(() => {
+      if (!shiftStart) return;
+      const diff = Math.floor((Date.now() - shiftStart.getTime()) / 1000);
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      document.getElementById('timerVal').textContent =
+        `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+  }
+
+  // ── MODAL ─────────────────────────────────────────────────
+  let currentAction = null;
+
+  function openModal(tipo) {
+    currentAction = tipo;
+    document.getElementById('modalTipo').textContent  = tipo === 'entrada' ? 'Entrada' : 'Salida';
+    document.getElementById('modalTipo').className    = `modal-tipo ${tipo}`;
+    document.getElementById('modalTitle').textContent = tipo === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Salida';
+    document.getElementById('btnConfirmar').className = `btn-confirmar ${tipo}`;
+    document.getElementById('btnConfirmar').textContent = tipo === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Salida';
+    // Pre-rellenar con datos del usuario
+    document.getElementById('fNombre').value   = user.nombre    || '';
+    document.getElementById('fApellidos').value= user.apellidos || '';
+    document.getElementById('fDni').value      = user.dni_nie   || '';
+    document.getElementById('modalMsg').className = 'modal-msg';
+    document.getElementById('firmaOverlay').classList.add('show');
+    document.getElementById('fNombre').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('firmaOverlay').classList.remove('show');
+    currentAction = null;
+  }
+
+  // Cerrar con Escape
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  async function confirmarFichaje() {
+    const nombre    = document.getElementById('fNombre').value.trim();
+    const apellidos = document.getElementById('fApellidos').value.trim();
+    const dni       = document.getElementById('fDni').value.trim();
+    const btn       = document.getElementById('btnConfirmar');
+    const msg       = document.getElementById('modalMsg');
+
+    if (!nombre || !apellidos || !dni) {
+      showModalMsg('Todos los campos son obligatorios.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Registrando…';
+    msg.className = 'modal-msg';
+
+    const endpoint = currentAction === 'entrada' ? '/api/time/clock-in' : '/api/time/clock-out';
+
+    try {
+      const res  = await apiFetch(endpoint, 'POST', { nombre, apellidos, dni });
+      const data = await res.json();
+
+      if (data.success) {
+        showModalMsg(data.message + ' — ' + (data.timestamp || ''), 'success');
+        setTimeout(() => {
+          closeModal();
+          loadStatus();
+          loadHistory(currentPage);
+          loadCurrentMonthTotal();
+          showToast(data.message, 'success');
+        }, 1200);
+      } else {
+        showModalMsg(data.message || 'Error al registrar.', 'error');
+        btn.disabled = false;
+        btn.textContent = currentAction === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Salida';
+      }
+    } catch(e) {
+      showModalMsg('Error de conexión.', 'error');
+      btn.disabled = false;
+      btn.textContent = currentAction === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Salida';
+    }
+  }
+
+  function showModalMsg(text, type) {
+    const el = document.getElementById('modalMsg');
+    el.textContent = text;
+    el.className = 'modal-msg show ' + type;
+  }
+
+  function initExportControls() {
+    const now = new Date();
+    const yearSelect = document.getElementById('exportYear');
+    const monthSelect = document.getElementById('exportMonth');
+    const currentYear = now.getFullYear();
+    yearSelect.innerHTML = '<option value="">Año actual</option>';
+    for (let y = currentYear; y >= currentYear - 3; y--) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+    monthSelect.innerHTML = '<option value="">Mes actual</option>' +
+      ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+        .map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+    yearSelect.value = currentYear;
+    monthSelect.value = String(now.getMonth() + 1);
+  }
+
+  function formatWorkedMinutes(minutes) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${String(m).padStart(2, '0')}m`;
+  }
+
+  function parseWorkedMinutes(record) {
+    if (typeof record.minutos_trabajados === 'number' && record.minutos_trabajados >= 0) {
+      return record.minutos_trabajados;
+    }
+    const text = record.horas_trabajadas || '';
+    const match = text.match(/(\d+)h\s+(\d+)m/);
+    if (!match) return 0;
+    return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+  }
+
+  async function loadCurrentMonthTotal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const label = document.getElementById('currentMonthTotalLabel');
+    label.textContent = 'Cargando total de horas…';
+
+    try {
+      const res = await apiFetch(`/api/time/records?year=${year}&month=${month}`);
+      const data = await res.json();
+      if (!data.success) {
+        label.textContent = `Total de horas en ${monthNames[month-1]} ${year}: 0h 00m`;
+        return;
+      }
+      const totalMinutes = data.data.reduce((sum, rec) => sum + parseWorkedMinutes(rec), 0);
+      label.textContent = `Total de horas en ${monthNames[month-1]} ${year}: ${formatWorkedMinutes(totalMinutes)}`;
+    } catch (e) {
+      label.textContent = 'No se pudo calcular el total de horas.';
+    }
+  }
+
+  async function exportMyHours() {
+    const year  = document.getElementById('exportYear').value;
+    const month = document.getElementById('exportMonth').value;
+    const params = new URLSearchParams();
+    if (year)  params.set('year', year);
+    if (month) params.set('month', month);
+
+    const res  = await apiFetch(`/api/time/records?${params.toString()}`);
+    const data = await res.json();
+    if (!data.success) {
+      showToast('No se pudieron obtener los registros.', 'error');
+      return;
+    }
+    if (!data.data.length) {
+      showToast('No hay registros para los filtros seleccionados.', 'error');
+      return;
+    }
+
+    generatePdf(data.data, {
+      empleado: `${user.nombre} ${user.apellidos}`,
+      year,
+      month,
+    });
+  }
+
+  function generatePdf(records, filters) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape', 'pt', 'a4');
+    const title = 'REGISTRO DE FICHAJES';
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const periodLabel = filters.month
+      ? `${monthNames[filters.month - 1]} ${filters.year || 'actual'}`
+      : 'Todos los meses';
+    const subtitle = `Período: ${periodLabel}`;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(title, 40, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(subtitle, 40, 60);
+    doc.text(`Empleado: ${filters.empleado}`, 40, 76);
+
+    const body = records.map(r => [
+      r.fecha,
+      r.hora_entrada,
+      r.hora_salida,
+      r.horas_trabajadas,
+      r.estado,
+      r.firma_entrada || '-',
+    ]);
+
+    const table = doc.autoTable({
+      startY: 95,
+      head: [[
+        'Fecha', 'Hora Entrada', 'Hora Salida', 'Duración', 'Estado', 'Firma Entrada'
+      ]],
+      body,
+      theme: 'grid',
+      headStyles: { fillColor: [20, 20, 20], textColor: 255, fontSize: 9 },
+      bodyStyles: { fontSize: 8, cellPadding: 4 },
+      styles: { overflow: 'linebreak', cellWidth: 'wrap' },
+      columnStyles: {
+        0: { cellWidth: 70 },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 80 },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 50 },
+        5: { cellWidth: 180 },
+      },
+      showHead: 'everyPage',
+      margin: { left: 40, right: 40, top: 90 },
+    });
+
+    const totalMinutes = records.reduce((sum, rec) => sum + parseWorkedMinutes(rec), 0);
+    const totalText = filters.month
+      ? `Total horas del mes seleccionado (${periodLabel}): ${formatWorkedMinutes(totalMinutes)}`
+      : `Total horas seleccionadas: ${formatWorkedMinutes(totalMinutes)}`;
+    const docFinalY = (doc.lastAutoTable?.finalY ?? table.finalY ?? 0) + 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const finalY = docFinalY > pageHeight - 40 ? pageHeight - 40 : docFinalY;
+    if (docFinalY > pageHeight - 40) {
+      doc.addPage();
+    }
+    doc.setFontSize(10);
+    doc.text(totalText, 40, finalY);
+
+    const fileName = `fichajes_${filters.year || 'todos'}_${filters.month || 'todos'}.pdf`;
+    doc.save(fileName);
+    showToast('PDF generado correctamente.', 'success');
+  }
+
+  // ── HISTORIAL ─────────────────────────────────────────────
+  let currentPage = 1;
+
+  async function loadHistory(page = 1) {
+    currentPage = page;
+    document.getElementById('historyBody').innerHTML =
+      '<tr class="loading-row"><td colspan="6"><span class="spinner-inline"></span>Cargando…</td></tr>';
+
+    try {
+      const res  = await apiFetch(`/api/time/history?page=${page}`);
+      const data = await res.json();
+      if (data.success) renderHistory(data.data);
+    } catch(e) {
+      document.getElementById('historyBody').innerHTML =
+        '<tr class="loading-row"><td colspan="6">Error al cargar el historial.</td></tr>';
+    }
+  }
+
+  function renderHistory(data) {
+    const tbody = document.getElementById('historyBody');
+    if (!data.records.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="6">No hay registros todavía.</td></tr>';
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = data.records.map(r => `
+      <tr>
+        <td>${r.fecha}</td>
+        <td>${r.hora_entrada}</td>
+        <td>${r.hora_salida === 'En curso'
+            ? '<span class="badge abierto">En curso</span>'
+            : r.hora_salida}</td>
+        <td>${r.horas_trabajadas}</td>
+        <td><span class="badge ${r.estado}">${r.estado}</span></td>
+        <td class="firma-cell" title="${r.firma_entrada}">${r.firma_entrada}</td>
+      </tr>
+    `).join('');
+
+    // Paginación
+    const pag = document.getElementById('pagination');
+    if (data.total_pages <= 1) { pag.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" onclick="loadHistory(${data.page-1})" ${data.page===1?'disabled':''}>‹</button>`;
+    for (let i = 1; i <= data.total_pages; i++) {
+      if (i===1 || i===data.total_pages || Math.abs(i-data.page)<=1) {
+        html += `<button class="page-btn ${i===data.page?'active':''}" onclick="loadHistory(${i})">${i}</button>`;
+      } else if (Math.abs(i-data.page)===2) {
+        html += `<span style="color:var(--muted)">…</span>`;
+      }
+    }
+    html += `<button class="page-btn" onclick="loadHistory(${data.page+1})" ${data.page===data.total_pages?'disabled':''}>›</button>`;
+    pag.innerHTML = html;
+  }
+
+  // ── UTILS ──────────────────────────────────────────────────
+  function buildUrl(path) {
+    const root = APP_ROOT === '/' ? '' : APP_ROOT;
+    const normalized = path.startsWith('/') ? path : '/' + path;
+    return (root + normalized).replace(/\/\/{2,}/g, '/');
+  }
+
+  function apiFetch(url, method = 'GET', body = null) {
+    const opts = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(buildUrl(url), opts).then(r => {
+      if (r.status === 401) { logout(); }
+      return r;
+    });
+  }
+
+  function showToast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast show ${type}`;
+    setTimeout(() => { el.className = 'toast'; }, 3500);
+  }
+
+  function toggleEmployeeDrawer() {
+    const drawer = document.getElementById('employeeDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+    const isOpen = drawer.classList.toggle('open');
+    overlay.classList.toggle('show', isOpen);
+  }
+
+  function scrollToSection(selector) {
+    const target = document.querySelector(selector);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function logout() {
+    apiFetch('/api/auth/logout', 'POST').finally(() => {
+      localStorage.clear();
+      location.href = buildUrl('/');
+    });
+  }
+
+  // ── INICIO ────────────────────────────────────────────────
+  loadStatus();
+  initExportControls();
+  loadHistory(1);
+  loadCurrentMonthTotal();
+</script>
+</body>
+</html>

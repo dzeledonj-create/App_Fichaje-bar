@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BURUKUCA CAFÉ — Administración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="admin-page">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>⬡ BURUKUCA CAFÉ</h1>
+    <p>ADMINISTRACIÓN</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item active" data-page="dashboard" onclick="showPage('dashboard', this)">
+      <span class="icon">▣</span><span>Dashboard</span>
+    </a>
+    <a class="nav-item" data-page="registros" onclick="showPage('registros', this)">
+      <span class="icon">≡</span><span>Fichajes</span>
+    </a>
+    <div class="nav-section">Gestión</div>
+    <a class="nav-item" data-page="empleados" onclick="showPage('empleados', this)">
+      <span class="icon">◎</span><span>Empleados</span>
+    </a>
+    <a class="nav-item" data-page="exportar" onclick="showPage('exportar', this)">
+      <span class="icon">↓</span><span>Exportar PDF</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <strong id="sidebarName">Admin</strong>
+    <span class="role" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;">Administrador</span>
+    <button class="btn-logout-side" onclick="logout()">Cerrar sesión</button>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <header class="topbar">
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-date" id="topbarDate"></div>
+    <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Abrir menú">☰</button>
+  </header>
+
+  <!-- ── DASHBOARD ── -->
+  <div class="page active" id="page-dashboard">
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--accent:var(--gold)">
+        <div class="kpi-label">Empleados activos</div>
+        <div class="kpi-value" id="kpiEmpleados">—</div>
+        <div class="kpi-sub">en plantilla</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--green)">
+        <div class="kpi-label">Turnos este mes</div>
+        <div class="kpi-value" id="kpiTurnos">—</div>
+        <div class="kpi-sub" id="kpiMes">—</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--blue)">
+        <div class="kpi-label">Horas este mes</div>
+        <div class="kpi-value" id="kpiHoras">—</div>
+        <div class="kpi-sub">horas totales</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--orange)">
+        <div class="kpi-label">En turno ahora</div>
+        <div class="kpi-value" id="kpiActivos">—</div>
+        <div class="kpi-sub">empleados activos</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h2>Resumen mensual por empleado</h2>
+        <span id="dashMesLabel" style="font-size:10px;color:var(--muted)"></span>
+      </div>
+      <div class="section-body">
+        <div class="table-wrap">
+          <table class="resumen-table">
+            <thead>
+              <tr>
+                <th>Empleado</th>
+                <th>DNI/NIE</th>
+                <th>Turnos</th>
+                <th>Horas totales</th>
+              </tr>
+            </thead>
+            <tbody id="resumenBody">
+              <tr class="loading-row"><td colspan="4"><span class="spinner-inline"></span>Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REGISTROS ── -->
+  <div class="page" id="page-registros">
+    <div class="section-card">
+      <div class="section-head">
+        <h2>Todos los fichajes</h2>
+      </div>
+      <div class="section-body">
+        <div class="filters" style="margin-bottom:20px">
+          <div class="filter-group">
+            <label>Empleado</label>
+            <select id="filterEmpleado">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Año</label>
+            <select id="filterAnio">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Mes</label>
+            <select id="filterMes">
+              <option value="">Todos</option>
+              <option value="1">Enero</option><option value="2">Febrero</option>
+              <option value="3">Marzo</option><option value="4">Abril</option>
+              <option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option>
+              <option value="9">Septiembre</option><option value="10">Octubre</option>
+              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" onclick="loadRecords()">Filtrar</button>
+          <button class="btn btn-outline" onclick="clearFilters()">Limpiar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Empleado</th>
+                <th>DNI/NIE</th>
+                <th>Hora Entrada</th>
+                <th>Hora Salida</th>
+                <th>Duración</th>
+                <th>Estado</th>
+                <th>Firma Entrada</th>
+                <th>Firma Salida</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody">
+              <tr class="loading-row"><td colspan="8"><span class="spinner-inline"></span>Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:12px" id="recordsCount"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EMPLEADOS ── -->
+  <div class="page" id="page-empleados">
+    <div class="section-card" style="margin-bottom:20px">
+      <div class="section-head">
+        <h2>Gestión de empleados</h2>
+        <button class="btn btn-gold" onclick="openNuevoEmpleado()">+ Nuevo empleado</button>
+      </div>
+      <div class="section-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Apellidos</th>
+                <th>DNI/NIE</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Alta</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="empleadosBody">
+              <tr class="loading-row"><td colspan="8"><span class="spinner-inline"></span>Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPORTAR PDF ── -->
+  <div class="page" id="page-exportar">
+    <div class="section-card">
+      <div class="section-head">
+        <h2>Exportar para gestoría</h2>
+      </div>
+      <div class="section-body">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:24px;line-height:1.8">
+          Genera un PDF con el registro de fichajes listo para entregar a tu gestoría.<br>
+          Incluye: Nombre, Apellidos, DNI/NIE, Hora de Entrada, Hora de Salida y Firma digital.
+        </p>
+
+        <div class="filters" style="margin-bottom:24px;align-items:flex-start">
+          <div class="filter-group">
+            <label>Empleado</label>
+            <select id="pdfEmpleado">
+              <option value="">Todos los empleados</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Año</label>
+            <select id="pdfAnio">
+              <option value="">Historial completo</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Mes</label>
+            <select id="pdfMes">
+              <option value="">Todos los meses</option>
+              <option value="1">Enero</option><option value="2">Febrero</option>
+              <option value="3">Marzo</option><option value="4">Abril</option>
+              <option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option>
+              <option value="9">Septiembre</option><option value="10">Octubre</option>
+              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="descargarPDF()" style="padding:12px 24px;font-size:11px">
+            ↓ Descargar PDF
+          </button>
+          <button class="btn btn-outline" onclick="previewRecords()" style="padding:12px 24px;font-size:11px">
+            ◎ Vista previa datos
+          </button>
+        </div>
+
+        <div id="pdfPreview" style="display:none;margin-top:24px">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">
+            Vista previa — <span id="pdfPreviewCount">0</span> registros
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th><th>Apellidos</th><th>DNI/NIE</th>
+                  <th>Entrada</th><th>Salida</th><th>Duración</th>
+                  <th>Firma Entrada</th><th>Firma Salida</th>
+                </tr>
+              </thead>
+              <tbody id="pdfPreviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.content -->
+
+<!-- MODAL: Nuevo Empleado -->
+<div class="overlay" id="modalEmpleado">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modalTitle">Nuevo empleado</h3>
+    <p id="modalSubtitle">Completa los datos para crear una cuenta de empleado.</p>
+    <div id="empleadoMsg" class="modal-msg" style="display:none"></div>
+    <div class="grid-2">
+      <div class="field"><label>Nombre</label><input type="text" id="eNombre" placeholder="Juan"></div>
+      <div class="field"><label>Apellidos</label><input type="text" id="eApellidos" placeholder="García López"></div>
+    </div>
+    <div class="field"><label>DNI / NIE</label><input type="text" id="eDni" placeholder="12345678A" maxlength="9"></div>
+    <div class="field"><label>Email</label><input type="email" id="eEmail" placeholder="juan@bar.com"></div>
+    <div class="field" id="passField"><label>Contraseña inicial</label><input type="password" id="ePass" placeholder="Mínimo 8 caracteres"></div>
+    <div class="field">
+      <label>Rol</label>
+      <select id="eRol">
+        <option value="empleado">Empleado</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <button id="eSubmit" class="btn btn-gold" style="width:100%;padding:13px;font-size:11px;justify-content:center" onclick="guardarEmpleado()">Crear empleado</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── APP ROOT / AUTH ───────────────────────────────────────
+  const APP_ROOT = window.location.pathname.split('/').slice(0,2).join('/') || '/';
+  const token = localStorage.getItem('bf_token');
+  if (!token) location.href = buildUrl('/');
+  const user = JSON.parse(localStorage.getItem('bf_user') || '{}');
+  if (user.rol !== 'admin') location.href = buildUrl('/empleado');
+
+  document.getElementById('sidebarName').textContent = user.nombre + ' ' + user.apellidos;
+
+  // Fecha topbar
+  const ahora = new Date();
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('topbarDate').textContent =
+    `${ahora.getDate()} ${meses[ahora.getMonth()]} ${ahora.getFullYear()}`;
+
+  // ── NAVEGACIÓN ────────────────────────────────────────────
+  const pageTitles = {
+    dashboard: 'Dashboard',
+    registros: 'Fichajes',
+    empleados: 'Empleados',
+    exportar:  'Exportar PDF',
+  };
+
+  // restore last opened page after reload (falls back to dashboard)
+  let currentPage = localStorage.getItem('bf_admin_currentPage') || 'dashboard';
+
+  function showPage(id, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const pageEl = document.getElementById('page-' + id);
+    if (pageEl) pageEl.classList.add('active');
+    // choose nav element if not passed
+    const navEl = el || document.querySelector(`.nav-item[data-page="${id}"]`);
+    if (navEl) navEl.classList.add('active');
+    document.getElementById('pageTitle').textContent = pageTitles[id] || '';
+    currentPage = id;
+    // persist page selection so reloads keep the current view
+    try { localStorage.setItem('bf_admin_currentPage', id); } catch (e) {}
+    if (id === 'registros') loadRecords();
+    if (id === 'empleados') loadEmpleados();
+    if (id === 'exportar')  initExport();
+  }
+
+  // on initial load, show the restored page
+  window.addEventListener('DOMContentLoaded', () => {
+    const startNav = document.querySelector(`.nav-item[data-page="${currentPage}"]`) || document.querySelector('.nav-item[data-page="dashboard"]');
+    showPage(currentPage, startNav);
+  });
+
+  // Attach data-label attributes to table cells using the thead labels
+  function attachDataLabels() {
+    document.querySelectorAll('.admin-page .table-wrap').forEach(wrapper => {
+      const ths = Array.from(wrapper.querySelectorAll('thead th')).map(t => t.textContent.trim());
+      wrapper.querySelectorAll('tbody tr').forEach(tr => {
+        Array.from(tr.children).forEach((td, i) => {
+          const label = ths[i] || td.getAttribute('data-label') || '';
+          if (label) td.setAttribute('data-label', label);
+        });
+      });
+    });
+  }
+
+  // watch for table body changes (data loaded async) and reattach labels
+  const tableBodies = document.querySelectorAll('.admin-page .table-wrap tbody');
+  const tableObserver = new MutationObserver(() => attachDataLabels());
+  tableBodies.forEach(tb => tableObserver.observe(tb, { childList: true, subtree: true }));
+  // initial run
+  attachDataLabels();
+
+  function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const open = !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', open);
+    overlay.classList.toggle('show', open);
+  }
+
+  // ── API HELPER ────────────────────────────────────────────
+  function buildUrl(path) {
+    const root = APP_ROOT === '/' ? '' : APP_ROOT;
+    const normalized = path.startsWith('/') ? path : '/' + path;
+    return (root + normalized).replace(/\/\/{2,}/g, '/');
+  }
+
+  function apiFetch(url, method = 'GET', body = null) {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(buildUrl(url), opts).then(r => { if(r.status===401) logout(); return r; });
+  }
+
+  let editingEmployeeId = null;
+
+  function showToast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast show ${type}`;
+    setTimeout(() => { el.className = 'toast'; }, 3500);
+  }
+
+  function logout() {
+    apiFetch('/api/auth/logout', 'POST').finally(() => { localStorage.clear(); location.href = buildUrl('/'); });
+  }
+
+  function resetEmpleadoModal() {
+    editingEmployeeId = null;
+    document.getElementById('modalTitle').textContent = 'Nuevo empleado';
+    document.getElementById('modalSubtitle').textContent = 'Completa los datos para crear una cuenta de empleado.';
+    document.getElementById('eNombre').value = '';
+    document.getElementById('eApellidos').value = '';
+    document.getElementById('eDni').value = '';
+    document.getElementById('eEmail').value = '';
+    document.getElementById('eEmail').disabled = false;
+    document.getElementById('ePass').value = '';
+    document.getElementById('passField').style.display = '';
+    const passLabel = document.querySelector('#passField label');
+    if (passLabel) passLabel.textContent = 'Contraseña inicial';
+    document.getElementById('eRol').value = 'empleado';
+    document.getElementById('eSubmit').textContent = 'Crear empleado';
+    const msg = document.getElementById('empleadoMsg');
+    msg.style.display = 'none';
+    msg.textContent = '';
+    msg.className = 'modal-msg';
+  }
+
+  function openNuevoEmpleado() {
+    resetEmpleadoModal();
+    document.getElementById('modalEmpleado').classList.add('show');
+  }
+
+  function openEditarEmpleado(id) {
+    const empleado = (window.currentEmployees || []).find(e => e.id === id);
+    if (!empleado) return;
+
+    editingEmployeeId = id;
+    document.getElementById('modalTitle').textContent = 'Editar empleado';
+    document.getElementById('modalSubtitle').textContent = 'Modifica nombre, apellidos, DNI/NIE, rol y contraseña (dejar vacío para mantener la actual).';
+    document.getElementById('eNombre').value = empleado.nombre || '';
+    document.getElementById('eApellidos').value = empleado.apellidos || '';
+    document.getElementById('eDni').value = empleado.dni_nie || '';
+    document.getElementById('eEmail').value = empleado.email || '';
+    document.getElementById('eEmail').disabled = true;
+    // show password field when editing so admin can reset/change password
+    document.getElementById('passField').style.display = '';
+    const passLabel = document.querySelector('#passField label');
+    if (passLabel) passLabel.textContent = 'Contraseña (opcional)';
+    document.getElementById('ePass').placeholder = 'Dejar vacío para mantener contraseña actual';
+    document.getElementById('eRol').value = empleado.rol || 'empleado';
+    document.getElementById('eSubmit').textContent = 'Guardar cambios';
+    document.getElementById('empleadoMsg').style.display = 'none';
+    document.getElementById('modalEmpleado').classList.add('show');
+  }
+
+  async function guardarEmpleado() {
+    const body = {
+      nombre:    document.getElementById('eNombre').value.trim(),
+      apellidos: document.getElementById('eApellidos').value.trim(),
+      dni_nie:   document.getElementById('eDni').value.trim(),
+      rol:       document.getElementById('eRol').value,
+    };
+
+    let url = '/api/admin/employees';
+    let method = 'POST';
+
+    const msg = document.getElementById('empleadoMsg');
+    msg.style.display = 'none';
+    if (editingEmployeeId) {
+      url = `/api/admin/employees/${editingEmployeeId}`;
+      method = 'PUT';
+      // include password only if admin entered a new one
+      const newPass = document.getElementById('ePass').value;
+      if (newPass) {
+        if (newPass.length < 8) {
+          msg.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+          msg.className = 'modal-msg error';
+          msg.style.display = 'block';
+          return;
+        }
+        body.password = newPass;
+      }
+    } else {
+      body.email = document.getElementById('eEmail').value.trim();
+      body.password = document.getElementById('ePass').value;
+    }
+
+
+    const res  = await apiFetch(url, method, body);
+    const data = await res.json();
+
+    msg.textContent = data.message;
+    msg.className   = `modal-msg ${data.success ? 'success' : 'error'}`;
+    msg.style.display = 'block';
+
+    if (data.success) {
+      setTimeout(() => {
+        closeModal();
+        loadEmpleados();
+        loadDashboard();
+        showToast(editingEmployeeId ? 'Empleado actualizado correctamente.' : 'Empleado creado correctamente.', 'success');
+      }, 900);
+    }
+  }
+
+  // ── DASHBOARD ─────────────────────────────────────────────
+  async function loadDashboard() {
+    try {
+      const res  = await apiFetch('/api/admin/dashboard');
+      const data = await res.json();
+      if (!data.success) return;
+      const d = data.data;
+
+      document.getElementById('kpiEmpleados').textContent = d.empleados.length;
+
+      // KPIs del mes
+      let totalTurnos = 0, totalMins = 0, activos = 0;
+      d.resumen_mes.forEach(e => {
+        totalTurnos += parseInt(e.total_turnos) || 0;
+        totalMins   += parseInt(e.total_minutos) || 0;
+      });
+      document.getElementById('kpiTurnos').textContent = totalTurnos;
+      document.getElementById('kpiHoras').textContent  = Math.round(totalMins/60);
+      document.getElementById('kpiMes').textContent    = meses[d.mes_actual - 1] + ' ' + d.anio_actual;
+      document.getElementById('dashMesLabel').textContent = meses[d.mes_actual - 1] + ' ' + d.anio_actual;
+
+      // Turnos abiertos (aproximación - se podría hacer con endpoint dedicado)
+      document.getElementById('kpiActivos').textContent = '—';
+
+      // Rellenar selects de empleados en toda la app
+      const empSelects = ['filterEmpleado', 'pdfEmpleado'];
+      empSelects.forEach(id => {
+        const sel = document.getElementById(id);
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">Todos los empleados</option>';
+        d.empleados.forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e.id;
+          opt.textContent = `${e.apellidos}, ${e.nombre}`;
+          sel.appendChild(opt);
+        });
+        sel.value = prev;
+      });
+
+      // Rellenar años
+      const años = d.anios || [];
+      ['filterAnio', 'pdfAnio'].forEach(id => {
+        const sel = document.getElementById(id);
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">Todos los años</option>';
+        años.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a;
+          opt.textContent = a;
+          sel.appendChild(opt);
+        });
+        // Año actual por defecto en pdfAnio
+        if (id === 'pdfAnio') {
+          sel.value = d.anio_actual;
+        } else {
+          sel.value = prev;
+        }
+      });
+
+      // Tabla resumen mes
+      const tbody = document.getElementById('resumenBody');
+      if (!d.resumen_mes.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="4">No hay registros este mes.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = d.resumen_mes.map(e => `
+        <tr>
+          <td>${e.nombre} ${e.apellidos}</td>
+          <td>${e.dni_nie}</td>
+          <td>${e.total_turnos || 0}</td>
+          <td>${e.total_horas || 0} h</td>
+        </tr>
+      `).join('');
+
+    } catch(e) { console.error(e); }
+  }
+
+  // ── REGISTROS ─────────────────────────────────────────────
+  async function loadRecords() {
+    const uid   = document.getElementById('filterEmpleado').value;
+    const year  = document.getElementById('filterAnio').value;
+    const month = document.getElementById('filterMes').value;
+
+    document.getElementById('recordsBody').innerHTML =
+      '<tr class="loading-row"><td colspan="8"><span class="spinner-inline"></span>Cargando…</td></tr>';
+
+    let url = '/api/admin/records?';
+    if (uid)   url += `user_id=${uid}&`;
+    if (year)  url += `year=${year}&`;
+    if (month) url += `month=${month}&`;
+
+    try {
+      const res  = await apiFetch(url);
+      const data = await res.json();
+      if (!data.success) return;
+      renderRecords(data.data);
+    } catch(e) {}
+  }
+
+  function renderRecords(records) {
+    const tbody = document.getElementById('recordsBody');
+    document.getElementById('recordsCount').textContent =
+      `${records.length} registros encontrados`;
+
+    if (!records.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8">No se encontraron fichajes con los filtros seleccionados.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = records.map(r => `
+      <tr>
+        <td>${r.usuario_nombre}</td>
+        <td style="font-size:11px">${r.usuario_dni}</td>
+        <td>${r.hora_entrada}</td>
+        <td>${r.hora_salida === 'En curso'
+              ? '<span class="badge abierto">En curso</span>'
+              : r.hora_salida}</td>
+        <td>${r.horas_trabajadas}</td>
+        <td><span class="badge ${r.estado}">${r.estado}</span></td>
+        <td class="firma-cell" title="${r.firma_entrada}">${r.firma_entrada}</td>
+        <td class="firma-cell" title="${r.firma_salida}">${r.firma_salida}</td>
+      </tr>
+    `).join('');
+  }
+
+  function clearFilters() {
+    document.getElementById('filterEmpleado').value = '';
+    document.getElementById('filterAnio').value = '';
+    document.getElementById('filterMes').value = '';
+    loadRecords();
+  }
+
+  // ── EMPLEADOS ─────────────────────────────────────────────
+  async function loadEmpleados() {
+    try {
+      const res  = await apiFetch('/api/admin/dashboard');
+      const data = await res.json();
+      const tbody = document.getElementById('empleadosBody');
+
+      const all = data.data?.empleados || [];
+      window.currentEmployees = all;
+      if (!all.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="8">No hay empleados registrados.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = all.map(e => `
+        <tr>
+          <td>${e.nombre}</td>
+          <td>${e.apellidos}</td>
+          <td style="font-size:11px">${e.dni_nie || '—'}</td>
+          <td style="font-size:11px">${e.email}</td>
+          <td><span class="badge ${e.rol === 'admin' ? 'admin' : 'empleado'}">${e.rol}</span></td>
+          <td><span class="badge ${e.activo ? 'activo' : 'inactivo'}">${e.activo ? 'Activo' : 'Inactivo'}</span></td>
+          <td style="font-size:11px;color:var(--muted)">${e.created_at ? e.created_at.split('T')[0] : '—'}</td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline" style="padding:5px 10px;font-size:9px"
+              onclick="openEditarEmpleado(${e.id})">Editar</button>
+            <button class="btn btn-outline" style="padding:5px 10px;font-size:9px"
+              onclick="toggleEmpleado(${e.id}, ${!e.activo})">
+              ${e.activo ? 'Desactivar' : 'Activar'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) {}
+  }
+
+  async function toggleEmpleado(id, active) {
+    const res  = await apiFetch(`/api/admin/employees/${id}/toggle`, 'PUT', { active });
+    const data = await res.json();
+    if (data.success) { showToast(data.message, 'success'); loadEmpleados(); }
+    else showToast(data.message, 'error');
+  }
+
+  // ── NUEVO EMPLEADO ────────────────────────────────────────
+  function closeModal() {
+    document.getElementById('modalEmpleado').classList.remove('show');
+  }
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+  // ── EXPORTAR PDF ──────────────────────────────────────────
+  function initExport() {
+    // El select de empleados ya está relleno desde loadDashboard
+  }
+
+  function formatWorkedMinutes(minutes) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${String(m).padStart(2, '0')}m`;
+  }
+
+  async function descargarPDF() {
+    const uid   = document.getElementById('pdfEmpleado').value;
+    const year  = document.getElementById('pdfAnio').value;
+    const month = document.getElementById('pdfMes').value;
+
+    const records = await fetchFilteredRecords(uid, year, month);
+    if (!records) {
+      showToast('No se pudieron obtener los registros.', 'error');
+      return;
+    }
+
+    generatePdf(records, {
+      empleado: document.getElementById('pdfEmpleado').selectedOptions[0]?.text || 'Todos los empleados',
+      year,
+      month,
+    });
+  }
+
+  async function fetchFilteredRecords(uid, year, month) {
+    let url = '/api/admin/records?';
+    if (uid)   url += `user_id=${uid}&`;
+    if (year)  url += `year=${year}&`;
+    if (month) url += `month=${month}&`;
+
+    try {
+      const res  = await apiFetch(url);
+      const data = await res.json();
+      if (!data.success) return null;
+      return data.data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function generatePdf(records, filters) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape', 'pt', 'a4');
+    const title = 'REGISTRO DE FICHAJES';
+    const subtitle = `Período: ${filters.month || 'Todos los meses'} ${filters.year || 'Todos los años'}`;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(title, 40, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(subtitle, 40, 58);
+    doc.text(`Empleado: ${filters.empleado}`, 40, 74);
+
+    const body = records.map(r => [
+      r.usuario_nombre,
+      r.usuario_apellidos,
+      r.usuario_dni,
+      r.hora_entrada || '-',
+      r.hora_salida === 'En curso' ? 'En curso' : (r.hora_salida || '-'),
+      r.firma_entrada || '-',
+    ]);
+
+    const table = doc.autoTable({
+      startY: 90,
+      head: [[
+        'Nombre', 'Apellido', 'DNI/NIE', 'Hora de Entrada', 'Hora de Salida', 'Firma'
+      ]],
+      body,
+      theme: 'grid',
+      headStyles: { fillColor: [20, 20, 20], textColor: 255, fontSize: 9 },
+      bodyStyles: { fontSize: 8, cellPadding: 4 },
+      styles: { overflow: 'linebreak', cellWidth: 'wrap' },
+      columnStyles: {
+        0: { cellWidth: 70 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 80 },
+        4: { cellWidth: 80 },
+        5: { cellWidth: 180 },
+      },
+      showHead: 'everyPage',
+      margin: { left: 40, right: 40, top: 90 },
+    });
+
+    const totalMinutes = records.reduce((sum, rec) => sum + (rec.minutos_trabajados || 0), 0);
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const periodLabel = filters.month
+      ? `${monthNames[filters.month - 1]} ${filters.year || 'actual'}`
+      : filters.year
+        ? `Año ${filters.year}`
+        : 'Todos los períodos';
+    const totalText = filters.month
+      ? `Total horas del mes seleccionado (${periodLabel}): ${formatWorkedMinutes(totalMinutes)}`
+      : filters.year
+        ? `Total horas del año seleccionado (${periodLabel}): ${formatWorkedMinutes(totalMinutes)}`
+        : `Total horas seleccionadas: ${formatWorkedMinutes(totalMinutes)}`;
+    const docFinalY = (doc.lastAutoTable?.finalY ?? table.finalY ?? 90) + 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    if (docFinalY > pageHeight - 40) {
+      doc.addPage();
+      doc.text(totalText, 40, 40);
+    } else {
+      doc.text(totalText, 40, docFinalY);
+    }
+
+    const fileName = `fichajes_${filters.year || 'todos'}_${filters.month || 'todos'}.pdf`;
+    doc.save(fileName);
+    showToast('PDF generado correctamente.', 'success');
+  }
+
+  async function previewRecords() {
+    const uid   = document.getElementById('pdfEmpleado').value;
+    const year  = document.getElementById('pdfAnio').value;
+    const month = document.getElementById('pdfMes').value;
+
+    let url = '/api/admin/records?';
+    if (uid)   url += `user_id=${uid}&`;
+    if (year)  url += `year=${year}&`;
+    if (month) url += `month=${month}&`;
+
+    const res  = await apiFetch(url);
+    const data = await res.json();
+    if (!data.success) return;
+
+    const records = data.data;
+    document.getElementById('pdfPreviewCount').textContent = records.length;
+
+    const tbody = document.getElementById('pdfPreviewBody');
+    if (!records.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin registros para los filtros seleccionados.</td></tr>';
+    } else {
+      tbody.innerHTML = records.map(r => `
+        <tr>
+          <td>${r.usuario_nombre}</td>
+          <td>${r.usuario_apellidos}</td>
+          <td style="font-size:11px">${r.usuario_dni}</td>
+          <td style="font-size:11px">${r.hora_entrada}</td>
+          <td style="font-size:11px">${r.hora_salida}</td>
+          <td>${r.horas_trabajadas}</td>
+          <td class="firma-cell">${r.firma_entrada}</td>
+          <td class="firma-cell">${r.firma_salida}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('pdfPreview').style.display = 'block';
+  }
+
+  // ── INICIO ────────────────────────────────────────────────
+  loadDashboard();
+</script>
+</body>
+</html>

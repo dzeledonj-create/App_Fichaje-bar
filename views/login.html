@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BURUKUCA CAFÉ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <section class="login-card">
+    <div class="brand">BURUKUCA CAFÉ <span>Control horario para empleados</span></div>
+    <p>Accede con tu correo electrónico y contraseña.</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" autocomplete="email" placeholder="tu@bar.com" required>
+      </div>
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="********" required>
+      </div>
+      <button type="submit" class="btn" id="btnLogin">Iniciar sesión</button>
+    </form>
+
+    <div id="loginMessage" class="message"></div>
+  </section>
+
+<script>
+  const APP_ROOT = window.location.pathname.split('/').slice(0,2).join('/') || '/';
+
+  function buildUrl(path) {
+    const root = APP_ROOT === '/' ? '' : APP_ROOT;
+    const normalized = path.startsWith('/') ? path : '/' + path;
+    return (root + normalized).replace(/\/\/{2,}/g, '/');
+  }
+
+  const token = localStorage.getItem('bf_token');
+  const user = JSON.parse(localStorage.getItem('bf_user') || '{}');
+  if (token && user.rol) {
+    window.location.href = buildUrl(user.rol === 'admin' ? '/admin' : '/empleado');
+  }
+
+  const form = document.getElementById('loginForm');
+  const message = document.getElementById('loginMessage');
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    message.className = 'message';
+    message.textContent = '';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+      showMessage('Completa email y contraseña.', 'error');
+      return;
+    }
+
+    const button = document.getElementById('btnLogin');
+    button.disabled = true;
+    button.textContent = 'Validando...';
+
+    try {
+      const res = await fetch(buildUrl('/api/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        showMessage(data.message || 'Credenciales incorrectas.', 'error');
+        button.disabled = false;
+        button.textContent = 'Iniciar sesión';
+        return;
+      }
+
+      localStorage.setItem('bf_token', data.token);
+      localStorage.setItem('bf_user', JSON.stringify(data.user));
+      window.location.href = buildUrl(data.user.rol === 'admin' ? '/admin' : '/empleado');
+    } catch (error) {
+      showMessage('Error de conexión. Intenta de nuevo.', 'error');
+      button.disabled = false;
+      button.textContent = 'Iniciar sesión';
+    }
+  });
+
+  function showMessage(text, type) {
+    message.textContent = text;
+    message.className = `message show ${type}`;
+  }
+</script>
+</body>
+</html>
