@@ -20,7 +20,7 @@ if (!file_exists($vendorAutoload)) {
 
 require_once $vendorAutoload;
 
-$ctrl   = new AdminController();
+$ctrl   = new AdminController(); 
 $userId = !empty($_GET['user_id']) ? (int)$_GET['user_id']  : null;
 $year   = !empty($_GET['year'])    ? (int)$_GET['year']     : null;
 $month  = !empty($_GET['month'])   ? (int)$_GET['month']    : null;
