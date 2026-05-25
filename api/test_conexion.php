@@ -1,6 +1,6 @@
 <?php
 // Asegúrate de que la ruta al archivo Database.php es correcta
-require_once 'config/Database.php';
+require_once __DIR__ . '/config/Database.php';
 use Config\Database;
 
 try {

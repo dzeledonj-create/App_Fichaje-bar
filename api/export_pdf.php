@@ -10,12 +10,12 @@ declare(strict_types=1);
 
 use Controllers\AdminController;
 
-$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+$vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
 if (!file_exists($vendorAutoload)) {
     header('Content-Type: text/plain; charset=utf-8');
     http_response_code(500);
     echo 'Error: TCPDF no está instalado. Ejecuta composer require tecnickcom/tcpdf en el proyecto.';
-    exit;
+        exit;
 }
 
 require_once $vendorAutoload;
