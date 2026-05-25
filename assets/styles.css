@@ -1180,10 +1180,15 @@
   .drawer-footer {
     margin-top: auto;
     padding-top: 16px;
+    position: sticky;
+    bottom: 0;
+    background: rgba(0,0,0,.9);
+    padding-bottom: 18px;
+    z-index: 5;
   }
   .drawer-logout {
     width: 100%;
-    background: rgba(231, 76, 60, .08);
+    background: rgba(231, 76, 60, .12);
     border: 1px solid rgba(231, 76, 60, .9);
     color: #E74C3C;
     text-align: left;
@@ -1197,6 +1202,7 @@
     transition: background .2s, border-color .2s, color .2s;
     display: block;
   }
+
   .drawer-logout:hover {
     background: rgba(231, 76, 60, .17);
     border-color: #E74C3C;
