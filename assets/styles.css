@@ -1183,15 +1183,24 @@
   }
   .drawer-logout {
     width: 100%;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: rgba(231, 76, 60, .08);
+    border: 1px solid rgba(231, 76, 60, .9);
+    color: #E74C3C;
     text-align: left;
-    padding: 12px 14px;
-    border-radius: 2px;
+    padding: 14px 16px;
+    border-radius: 4px;
     font-family: 'DM Mono', monospace;
     font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
     cursor: pointer;
+    transition: background .2s, border-color .2s, color .2s;
+    display: block;
+  }
+  .drawer-logout:hover {
+    background: rgba(231, 76, 60, .17);
+    border-color: #E74C3C;
+    color: #E74C3C;
   }
   .drawer-overlay {
     display: none;
@@ -1214,6 +1223,7 @@
     .topbar-toggle { display: inline-flex; }
     .topbar-user { display: none; }
     .btn-logout { display: none; }
+    .drawer-logout { display: block; }
     .clock-section { flex-direction: column; align-items: flex-start; }
     .clock-display { font-size: 36px; }
     .clock-date { font-size: 10px; }
