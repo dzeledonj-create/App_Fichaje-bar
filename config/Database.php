@@ -12,18 +12,6 @@ use PDOException;
 
 class Database
 {
-    // ── Parámetros de conexión a Supabase ────────────────────
-    private static string $host     = 'aws-0-eu-west-3.pooler.supabase.com';
-    private static int    $port     = 5432;
-    private static string $dbname   = 'postgres';
-    private static string $user     = 'postgres.ynklgmrrmlielizcrviv';
-    
-    // ⚠️ IMPORTANTE: Reemplaza esto por la contraseña de tu base de datos de Supabase
-    private static string $password = 'ZeledonMONDRAGON'; 
-    
-    private static string $charset  = 'utf8';
-    // ─────────────────────────────────────────────────────────
-
     private static ?PDO $instance = null;
 
     /**
@@ -32,13 +20,31 @@ class Database
     public static function getInstance(): PDO
     {
         if (self::$instance === null) {
-            // Nota: Se ha añadido sslmode=require para conexiones seguras en la nube
+            
+            // 1. Obtenemos la URL de la base de datos desde Vercel (Variable de Entorno)
+            $dbUrl = getenv('DATABASE_URL');
+            
+            if (!$dbUrl) {
+                throw new \RuntimeException('Error Crítico: No se encontró la variable de entorno DATABASE_URL en Vercel.');
+            }
+
+            // 2. Parseamos la URL para extraer las credenciales dinámicamente
+            $dbopts = parse_url($dbUrl);
+
+            $host     = $dbopts["host"];
+            $port     = $dbopts["port"] ?? 5432;
+            $user     = $dbopts["user"];
+            $password = $dbopts["pass"];
+            $dbname   = ltrim($dbopts["path"], '/');
+            $charset  = 'utf8';
+
+            // 3. Construimos el DSN seguro
             $dsn = sprintf(
                 'pgsql:host=%s;port=%d;dbname=%s;sslmode=require;options=--client_encoding=%s',
-                self::$host,
-                self::$port,
-                self::$dbname,
-                self::$charset
+                $host,
+                $port,
+                $dbname,
+                $charset
             );
 
             $options = [
@@ -48,13 +54,16 @@ class Database
             ];
 
             try {
-                self::$instance = new PDO($dsn, self::$user, self::$password, $options);
-                // Mantenemos la zona horaria para que los registros cuadren con la hora local
+                // 4. Iniciamos la conexión con las credenciales extraídas
+                self::$instance = new PDO($dsn, $user, $password, $options);
+                
+                // Mantenemos tu zona horaria para que los registros cuadren
                 self::$instance->exec("SET timezone='Europe/Madrid'");
+                
             } catch (PDOException $e) {
-                // En producción: log y mensaje genérico
-                error_log('[DB ERROR] ' . $e->getMessage());
-                throw new \RuntimeException('Detalle del error: ' . $e->getMessage());
+                // En producción: log ocultando la contraseña real
+                error_log('[DB ERROR] Fallo al conectar con Supabase.');
+                throw new \RuntimeException('Error al conectar a la base de datos.');
             }
         }
 
