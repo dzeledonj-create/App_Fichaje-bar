@@ -29,12 +29,16 @@
   </section>
 
 <script>
-  const APP_ROOT = window.location.pathname.split('/').slice(0,2).join('/') || '/';
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const APP_ROOT = pathParts.length && !['admin', 'empleado', 'api'].includes(pathParts[0])
+    ? '/' + pathParts[0]
+    : '';
 
   function buildUrl(path) {
-    const root = APP_ROOT === '/' ? '' : APP_ROOT;
     const normalized = path.startsWith('/') ? path : '/' + path;
-    return (root + normalized).replace(/\/\/{2,}/g, '/');
+    return APP_ROOT && (normalized === '/' || normalized.startsWith('/api') || normalized.startsWith('/admin') || normalized.startsWith('/empleado'))
+      ? (APP_ROOT + normalized).replace(/\/\/{2,}/g, '/')
+      : normalized;
   }
 
   const token = localStorage.getItem('bf_token');
